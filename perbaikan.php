@@ -121,7 +121,7 @@ if(isset($_GET['id'])){
                 <section class="section">
                     <div class="card">
                         <div class="card-header">
-
+                            <h4 class="card-title">Perbaikan</h4>
                         </div>
                         <div class="card-body">
                             <table class="table" id="table1">
@@ -131,28 +131,45 @@ if(isset($_GET['id'])){
                                     <th>Pemilik</th>
                                     <th>Detail perbaikan</th>
                                     <th>Total Biaya</th>
+                                    <th>Aksi</th>
                                 </tr>
 
                                 </thead>
                                 <tbody>
                                 <?php
                                 //view tabel rincian_perbaikan
-                                $sql = "select * from rincian_perbaikan";
+                                $sql = "SELECT 
+                                            rincian_perbaikan.id_hp,
+                                            handphone.merek,
+                                            handphone.tipe,
+                                            pengguna.username AS pemilik,
+                                            rincian_perbaikan.detail_perbaikan,
+                                            rincian_perbaikan.total_biaya
+                                        FROM 
+                                            rincian_perbaikan
+                                        INNER JOIN 
+                                            handphone ON rincian_perbaikan.id_hp = handphone.id_hp
+                                        INNER JOIN 
+                                            pengguna ON handphone.id_pengguna = pengguna.id_pengguna";
                                 $query = mysqli_query($conn, $sql);
+
+                                if (!$query) {
+                                    die("Query failed: " . mysqli_error($conn));
+                                }
 
                                 while($row = mysqli_fetch_array($query)){
                                     echo "
-            <tr>
-                <td></td>
-                <td></td>
-                <td>$row[detail_perbaikan]</td>
-                <td>$row[total_biaya]</td>
-                <td>
-                    <a href='update_handphone.php?id=$row[id_hp]'>Edit</a>
-                    <a href='?id=$row[id_hp]'>Hapus</a>
-                </td>
-            </tr>
-            ";
+                                    <tr>
+                                        <td>{$row['merek']} {$row['tipe']}</td>
+                                        <td>{$row['pemilik']}</td>
+                                        <td>{$row['detail_perbaikan']}</td>
+                                        <td>{$row['total_biaya']}</td>
+                                        <td>
+                                            <a href='update_handphone.php?id={$row['id_hp']}'>Edit</a>
+                                            <a href='?id={$row['id_hp']}'>Hapus</a>
+                                        </td>
+                                    </tr>
+                                    ";
                                 }
                                 ?>
                                 </tbody>

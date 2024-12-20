@@ -161,7 +161,7 @@ if(isset($_GET['id'])){
 
         $no = 1;
         while($row = $result->fetch_assoc()){
-            if($row["id_status"]==1){
+            if($row["id_status"]==2){
                 echo "
                 <tr>
                     <td>$no</td>

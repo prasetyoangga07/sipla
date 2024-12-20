@@ -15,7 +15,6 @@ include "koneksi.php";
     <link rel="stylesheet" href="assets/assets/css/main/app-dark.css">
     <link rel="shortcut icon" href="assets/assets/images/logo/favicon.svg" type="image/x-icon">
     <link rel="shortcut icon" href="assets/assets/images/logo/favicon.png" type="image/png">
-
     <link rel="stylesheet" href="assets/assets/css/shared/iconly.css">
 </head>
 <body>
@@ -29,7 +28,6 @@ include "koneksi.php";
                             <img src="./images/user/user.png" alt="user" class="img-user me-2">
                             <div>
                                 <p style="font-size:18px ;">Admin</p>
-
                             </div>
                         </div>
                         <div class="theme-toggle d-flex gap-2  align-items-center mt-2">
@@ -49,35 +47,29 @@ include "koneksi.php";
                     <ul class="menu">
                         <li class="sidebar-title">Menu</li>
 
-                        <li
-                            class="sidebar-item active ">
+                        <li class="sidebar-item active ">
                             <a href="index.php" class='sidebar-link'>
                                 <i class="fa fa-home fa-lg box-icon"></i>
                                 <span>Home</span>
                             </a>
                         </li>
-                        <li
-                            class="sidebar-item  ">
+                        <li class="sidebar-item  ">
                             <a href="profile.php" class='sidebar-link'>
                                 <i class="fa fa-user fa-lg box-icon"></i>
                                 <span>Profile</span>
                             </a>
-
                         </li>
-                        <li
-                            class="sidebar-item  ">
+                        <li class="sidebar-item  ">
                             <a href="settings.php" class='sidebar-link'>
                                 <i class="fa fa-cog fa-lg box-icon"></i>
                                 <span>Settings</span>
                             </a>
                         </li>
-                        <li
-                            class="sidebar-item  ">
+                        <li class="sidebar-item  ">
                             <a href="logout.php" class='sidebar-link'>
                                 <i class="fa fa-sign-out fa-lg box-icon"></i>
                                 <span>LogOut</span>
                             </a>
-
                         </li>
                     </ul>
                 </div>
@@ -93,7 +85,6 @@ include "koneksi.php";
                 <h3>Data Transaksi</h3>
             </div>
             <div class="page-content">
-
                 <div class="page-title">
                     <div class="row">
                         <div class="col-12 col-md-6 order-md-1 order-last">
@@ -112,7 +103,6 @@ include "koneksi.php";
                 <section class="section">
                     <div class="card">
                         <div class="card-header">
-
                         </div>
                         <div class="card-body">
                             <table class="table" id="table1">
@@ -124,48 +114,69 @@ include "koneksi.php";
                                     <th>Pemilik</th>
                                     <th>Bukti Pembayaran</th>
                                 </tr>
-
                                 </thead>
                                 <tbody>
                                 <?php
                                 //view join tabel transaksi, handphone, pengguna
                                 include('koneksi.php'); // Pastikan koneksi ke database berhasil
                                 
-                                // Query untuk mengambil data dari tabel handphone, pengguna, dan status_perbaikan
+                                $kode_pembayaran = isset($_POST['kode_pembayaran']) ? $_POST['kode_pembayaran'] : null;
+                                $id_transaksi = isset($_POST['id_transaksi']) ? $_POST['id_transaksi'] : null;
+
+                                // Use $kode_pembayaran and $id_transaksi safely
+                                if ($kode_pembayaran !== null) {
+                                    // Your code that uses $kode_pembayaran
+                                }
+
+                                if ($id_transaksi !== null) {
+                                    // Your code that uses $id_transaksi
+                                }
+
+                                // Query untuk mengambil data dari tabel handphone, pengguna, status_perbaikan, dan transaksi
                                 $sql = "SELECT 
                                             handphone.id_hp, 
                                             handphone.merek, 
                                             handphone.tipe, 
+                                            transaksi.total_biaya,
                                             pengguna.username AS pemilik, 
-                                            status_perbaikan.status 
+                                            pengguna.id_pengguna,
+                                            status_perbaikan.status,
+                                            transaksi.kode_pembayaran,
+                                            transaksi.bukti_pembayaran
                                         FROM 
                                             handphone 
                                         INNER JOIN 
                                             pengguna ON handphone.id_pengguna = pengguna.id_pengguna 
                                         INNER JOIN 
-                                            status_perbaikan ON handphone.id_status = status_perbaikan.id_status";
+                                            status_perbaikan ON handphone.id_status = status_perbaikan.id_status
+                                        LEFT JOIN
+                                            transaksi ON handphone.id_hp = transaksi.id_hp";
                                 
                                 $query = mysqli_query($conn, $sql);
 
+                                if (!$query) {
+                                    die("Query failed: " . mysqli_error($conn));
+                                }
+
                                 while($row = mysqli_fetch_array($query)){
-                                    if($row['kode_pembayaran']==""){
+                                    if(empty($row['kode_pembayaran'])){
                                         echo "
                                         <tr>
-                                            <td><a href='updateTransaksi.php?id=$row[id_transaksi]'>Tambah</a></td>
-                                            <td>$row[merek] $row[tipe]</td>
-                                            <td></td>
-                                            <td>$row[pemilik]</td>
+                                            <td><a href='updateTransaksi.php?id={$row['id_hp']}&merek={$row['merek']}&tipe={$row['tipe']}&total_biaya={$row['total_biaya']}&pemilik={$row['pemilik']}&id_pengguna={$row['id_pengguna']}'>Tambah</a></td>
+                                            <td>{$row['merek']} {$row['tipe']}</td>
+                                            <td>{$row['total_biaya']}</td>
+                                            <td>{$row['pemilik']}</td>
                                             <td></td>
                                         </tr>
                                         ";
                                     } else {
                                         echo "
                                         <tr>
-                                            <td>$row[kode_pembayaran]</td>
-                                            <td>$row[merek] $row[tipe]</td>
-                                            <td></td>
-                                            <td>$row[pemilik]</td>
-                                            <td><img src='$row[bukti_pembayaran]' alt='' width='200' '></td>
+                                            <td>{$row['kode_pembayaran']}</td>
+                                            <td>{$row['merek']} {$row['tipe']}</td>
+                                            <td>{$row['total_biaya']}</td>
+                                            <td>{$row['pemilik']}</td>
+                                            <td><img src='uploads/{$row['bukti_pembayaran']}' alt='' width='200'></td>
                                         </tr>
                                         ";
                                     }
@@ -175,7 +186,6 @@ include "koneksi.php";
                             </table>
                         </div>
                     </div>
-
                 </section>
             </div>
 
@@ -185,8 +195,7 @@ include "koneksi.php";
                         <p>2022 &copy; Admin</p>
                     </div>
                     <div class="float-end">
-                        <p>Crafted with <span class="text-danger"></span> by <a
-                                href="https://saugi.me">Violet Cell</a></p>
+                        <p>Crafted with <span class="text-danger"></span> by <a href="https://saugi.me">Violet Cell</a></p>
                     </div>
                 </div>
             </footer>
@@ -200,8 +209,4 @@ include "koneksi.php";
     <script src="assets/assets/js/pages/dashboard.js"></script>
 
 </body>
-
-
-
 </html>
-

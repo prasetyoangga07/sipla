@@ -124,11 +124,11 @@ if(isset($_POST['edit'])){
             <div class="form-group">
                 <label for="status-handphone">Status Perbaikan</label>
                 <select name="status-handphone">
-                    <option value="1" selected>Proses Perbaikan</option>
-                    <option value="2">Selesai</option>
-                    <option value="3">Dibatalkan</option>
-                    <option value="4">Siap Diambil</option>
-                    <option value="5">Menunggu Pembayaran</option>
+                    <option value="1" selected>Menunggu Konfirmasi</option>
+                    <option value="2">Menunggu Pembayaran</option>
+                    <option value="3">Dalam Proses</option>
+                    <option value="4">Selesai</option>
+                    <option value="5">Dibatalkan</option>
                 </select>
             </div>
             <div class="col-12 d-flex justify-content-end">

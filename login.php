@@ -5,16 +5,17 @@ if(isset($_POST['login'])){
     $email = $_POST['email'];
     $password = $_POST['password'];
     $query = "SELECT * FROM pengguna WHERE email = '$email' and password = '$password' ";
-    $row = mysqli_fetch_array(mysqli_query($GLOBALS['conn'], $query));
-    if(mysqli_num_rows(mysqli_query($GLOBALS['conn'], $query))!=0){
-        $row = mysqli_fetch_array(mysqli_query($GLOBALS['conn'], $query));
+    $result = mysqli_query($GLOBALS['conn'], $query);
+    if(mysqli_num_rows($result) != 0){
+        $row = mysqli_fetch_array($result);
         if($row['email'] == $email && $row['password'] == $password){
             $_SESSION['login'] = true;
             $_SESSION['email'] = $email;
             $_SESSION['password'] = $password;
+            $_SESSION['id_pengguna'] = $row['id_pengguna']; // Store id_pengguna in session
             header("Location: user.php");
         }
-    }else{
+    } else {
         echo "
         <script>
         alert('Akun Tidak Ditemukan');

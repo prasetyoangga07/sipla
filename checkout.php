@@ -2,34 +2,108 @@
 include 'koneksi.php';
 session_start();
 
-if(!isset($_SESSION['login'])){
+if (!isset($_SESSION['login'])) {
     header('location: login.php');
+    exit();
 }
 
-$id = $_GET['id']; //id_hp
+$id = $_GET['id'] ?? null;
 
-//checkout
-if(isset($_POST['submit'])){
-    mysqli_query($conn, "INSERT INTO transaksi(id_hp, kode_pembayaran, bukti_pembayaran) VALUES ('$id', '', '')");
-    header("location: uploadBukti.php?id=$id");
+if (!$id) {
+    die("Error: ID Handphone tidak ditemukan.");
 }
 
-$query = "SELECT * FROM pengguna WHERE email = '$_SESSION[email]' AND password = '$_SESSION[password]'";
-$row = mysqli_fetch_array(mysqli_query($GLOBALS['conn'], $query));
+// Ambil data pengguna dari session
+$id_pengguna = $_SESSION['id_pengguna'] ?? null;
 
-// Cek apakah query berhasil
-$result = mysqli_query($conn, "SELECT rincian_perbaikan.*, handphone.* FROM rincian_perbaikan INNER JOIN handphone ON rincian_perbaikan.id_hp=handphone.id_hp WHERE handphone.id_hp='$id'");
-
-if (!$result) {
-    die('Query Error: ' . mysqli_error($conn));
+if (!$id_pengguna) {
+    die("Error: ID Pengguna tidak ditemukan. Pastikan Anda sudah login.");
 }
 
-$row2 = mysqli_fetch_array($result);
+// Checkout
+if (isset($_POST['submit'])) {
+    $bukti_pembayaran = $_FILES['bukti_pembayaran']['name'];
+    $metode = $_POST['paymentMethod'];
 
-// Cek apakah $row2 memiliki data
-if (!$row2) {
-    die('Data tidak ditemukan untuk ID HP: ' . htmlspecialchars($id));
+    // Upload bukti pembayaran
+    $target_dir = "uploads/";
+    $target_file = $target_dir . basename($bukti_pembayaran);
+
+    if (!is_dir($target_dir)) {
+        mkdir($target_dir, 0777, true);
+    }
+
+    if (!move_uploaded_file($_FILES['bukti_pembayaran']['tmp_name'], $target_file)) {
+        die("Error: Gagal mengunggah bukti pembayaran.");
+    }
+
+    // Update transaksi
+    $query_transaksi = "UPDATE transaksi SET bukti_pembayaran = ?, metode_pembayaran = ? WHERE id_hp = ? AND id_pengguna = ?";
+    $stmt_transaksi = $conn->prepare($query_transaksi);
+
+    if (!$stmt_transaksi) {
+        die("Error preparing statement: " . $conn->error);
+    }
+
+    $stmt_transaksi->bind_param("ssii", $bukti_pembayaran, $metode, $id, $id_pengguna);
+
+    if ($stmt_transaksi->execute()) {
+        // Update id_status pada tabel handphone
+        $query_update_status = "UPDATE handphone SET id_status = 3 WHERE id_hp = ?";
+        $stmt_update_status = $conn->prepare($query_update_status);
+
+        if (!$stmt_update_status) {
+            die("Error preparing statement: " . $conn->error);
+        }
+
+        $stmt_update_status->bind_param("i", $id);
+
+        if ($stmt_update_status->execute()) {
+            header("location: handphone_pelanggan.php");
+            exit();
+        } else {
+            die("Error updating handphone status: " . $stmt_update_status->error);
+        }
+    } else {
+        die("Error updating transaksi: " . $stmt_transaksi->error);
+    }
 }
+
+// Query untuk mendapatkan data pengguna
+$query_pengguna = "SELECT * FROM pengguna WHERE id_pengguna = ?";
+$stmt_pengguna = $conn->prepare($query_pengguna);
+
+if (!$stmt_pengguna) {
+    die("Error preparing statement: " . $conn->error);
+}
+
+$stmt_pengguna->bind_param("i", $id_pengguna);
+$stmt_pengguna->execute();
+$result_pengguna = $stmt_pengguna->get_result();
+
+if ($result_pengguna->num_rows === 0) {
+    die("Error: Pengguna tidak ditemukan.");
+}
+
+$row = $result_pengguna->fetch_assoc();
+
+// Query untuk mendapatkan data handphone
+$query_handphone = "SELECT handphone.*, transaksi.total_biaya FROM handphone LEFT JOIN transaksi ON handphone.id_hp = transaksi.id_hp WHERE handphone.id_hp = ?";
+$stmt_handphone = $conn->prepare($query_handphone);
+
+if (!$stmt_handphone) {
+    die("Error preparing statement: " . $conn->error);
+}
+
+$stmt_handphone->bind_param("i", $id);
+$stmt_handphone->execute();
+$result_handphone = $stmt_handphone->get_result();
+
+if ($result_handphone->num_rows === 0) {
+    die("Error: Data handphone tidak ditemukan.");
+}
+
+$row2 = $result_handphone->fetch_assoc();
 ?>
 
 <!DOCTYPE html>
@@ -129,7 +203,7 @@ if (!$row2) {
                                 </div>
                                 <div class="card-content">
                                     <div class="card-body">
-                                        <form class="form" action="" method="POST">
+                                        <form class="form" action="" method="POST" enctype="multipart/form-data">
                                             <div class="row">
                                                 <div class="col-md-6 col-12">
                                                     <div class="form-group">
@@ -139,31 +213,33 @@ if (!$row2) {
                                                 </div>
                                                 <div class="col-md-6 col-12">
                                                     <div class="form-group">
-                                                        <label for="city-column">Detail Perbaikan</label>
-                                                        <input type="text"  class="form-control" value="<?php echo "$row2[detail_perbaikan]" ?>" disabled>
+                                                        <label for="city-column">Detail Kerusakan</label>
+                                                        <input type="text"  class="form-control" value="<?php echo "$row2[detail_kerusakan]" ?>" disabled>
                                                     </div>
                                                 </div>
                                                 <div class="col-md-6 col-12">
                                                     <div class="form-group">
-                                                        <label for="city-column">Detail Perbaikan</label>
+                                                        <label for="city-column">Total Biaya</label>
                                                         <input type="text"  class="form-control" value="<?php echo "$row2[total_biaya]" ?>" disabled>
                                                     </div>
                                                 </div>
                                                 <div class="col-md-6 col-12">
                                                     <div class="form-group">
-                                                        <label for="city-column">Metode</label>
-                                                        <select name='paymentMethod'>
-                                                            <option value='0'>Cash</option>
-                                                            <option value='1'>Opsi2</option>
-                                                            <option value='2'>Opsi3</option>
+                                                        <label for="city-column">Metode Pembayaran</label>
+                                                        <select name='paymentMethod' class="form-control">
+                                                            <option value='Cash'>Cash</option>
+                                                            <option value='Transfer'>Transfer</option>
                                                         </select>
                                                     </div>
                                                 </div>
+                                                <div class="col-md-6 col-12">
+                                                    <div class="form-group">
+                                                        <label for="bukti_pembayaran">Upload Bukti Pembayaran</label>
+                                                        <input type="file" name="bukti_pembayaran" class="form-control" required>
+                                                    </div>
+                                                </div>
                                                 <div class="col-12 d-flex justify-content-end">
-                                                    <form action="" method="post">
-                                                        <input class="btn btn-primary  me-1 mb-1" type="submit" name="submit" value="Checkout">
-                                                    </form>
-                                                    <!-- <button type="submit"  me-1 mb-1" name="tambah">Submit</button> -->
+                                                    <button class="btn btn-primary me-1 mb-1" type="submit" name="submit">Checkout</button>
                                                 </div>
                                             </div>
                                         </form>
@@ -197,4 +273,3 @@ if (!$row2) {
 
 </body>
 </html>
-
